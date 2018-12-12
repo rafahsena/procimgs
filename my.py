@@ -1,73 +1,132 @@
+import sys
+from PIL import Image
+import numpy as np
 import matplotlib.pyplot as plt
-import numpy
 
-def clamp(pixel):
-    if pixel < 0:
-        pixel = 0
-    elif pixel > 255:
-        pixel = 255
-    return pixel
 
-def imread(img):
-    image = 255 * plt.imread(img)
-    return image.astype('uint8')
+def imread(str):
+    img = plt.imread(str)
+    if (nchannels(img) == 3 and img.dtype != np.int32):
+        img = np.uint8(img[..., :3] * 255)
+    if (nchannels(img) == 4 and img.dtype != np.int32):
+        img = np.uint8(img[..., :4] * 255)
+    if (nchannels(img) < 3 and img.dtype != np.int32):
+        img = np.uint(img * 255)
+    return img
+
 
 def nchannels(img):
-    return img[0][0].size
+    if(len(img.shape) == 2):
+        return 1
+    *s, c = img.shape
+    return c
+
 
 def size(img):
-    array = []
-    array.append(len(img[0])) #Largura
-    array.append(len(img)) #Altura
-    return array
+    if(len(img.shape) == 2):
+        s = img.shape
+        return s
+    *s, c = img.shape
+    return s
 
 def rgb2gray(img):
-    grayimg = numpy.array([[pixel[0]*0.299 + pixel[1]*0.587 + pixel[2]*0.114 for pixel in img[n]] for n in range(len(img))])
+    grayimg = np.array([[pixel[0]*0.299 + pixel[1]*0.587 + pixel[2]*0.114 for pixel in img[n]] for n in range(len(img))])
     return grayimg.astype('uint8')
 
-def imreadgray(img):
-    new = imread(img)
-    if(nchannels(new) > 2):
-        return rgb2gray(new)
-    return new
+
+def imreadgray(str):
+    img = imread(str)
+    img = rgb2gray(img)
+    return img
+
+def test():
+    a = np.array((1,2,3))
+    img = np.vstack(a.ravel())
+    print(img)
 
 def imshow(img):
-    cmap = None
     if(nchannels(img) == 1):
-        cmap = "gray"
-    print(img)
-    plt.imshow(img, cmap=cmap, interpolation="nearest")
+        imgplot = plt.imshow(img, cmap="gray", interpolation="nearest")
+    else:
+        imgplot = plt.imshow(img, interpolation="nearest")
+
     plt.show()
 
-def thresh(img, threshold):
-    binary_img = numpy.array([[255 if pixel >= threshold else 0 for pixel in img[n]] for n in range(len(img))])
-    return binary_img.astype('uint8')
 
 def negative(img):
-    if(nchannels(img) == 1):
-        negative = numpy.array([[255 - pixel for pixel in img[n]] for n in range(len(img))])
-    else:
-        negative = numpy.array([[[255 - channel for channel in pixel] for pixel in img[n]] for n in range(len(img))])
-    return negative
+    img1 = img.copy()
+    img1 = 255 - img1
+    return img1
 
-def contrast(img, r, m):
-    contrast = numpy.array([[[clamp(r*(channel - m) + m) for channel in pixel] for pixel in img[n]] for n in range(len(img))])
-    return contrast.astype('uint8')
+
+def contrast(f, r, m):
+    f1 = f.copy()
+    g = np.clip(r * (f1 - m) + m, 0, 255).astype(np.uint8)
+    return g
+
 
 def hist(img):
     if(nchannels(img) == 1):
-        hist = numpy.zeros((256, 1), int)
+        hist = np.zeros((256, 1), int)
         for line in img:
             for pixel in line:
                 hist[pixel][0] += 1
+        
         return hist
     else:
-        hist = numpy.zeros((256, 3), int)
+        hist = np.zeros((256, 3), int)
         for line in img:
             for pixel in line:
                 for index, channel in enumerate(pixel):
                     hist[channel][index] += 1
         return hist
+
+
+def showhist(hist, bin=1):
+    
+    showhist = 0
+    x = list(range(255))
+    z = 0 
+    _, ax = plt.subplots()
+    if(len(hist[0]) == 1):
+        showhist = np.hstack(hist)
+        print(hist)
+        for j in range(0, 255):
+            ax.bar(x[j], showhist[j], color= "Blue")
+                
+    if(len(hist[0]) == 3):
+        R = np.hstack(hist[...,0])
+        G = np.hstack(hist[...,1])
+        B = np.hstack(hist[...,2])
+
+        for j in range(0, 255):
+            ax.bar(x[j] - 0.2, R[j], width = 0.2, color= "Red", align = "center")
+            ax.bar(x[j], G[j], width = 0.2 ,color= "Green", align = "center")
+            ax.bar(x[j] + 0.2, B[j], width = 0.2, color= "Blue", align = "center")
+
+   
+     
+    plt.show()
+    
+    
+    
+def convolve(img, mask):
+    mask = [[1, 2, 1], [2, 4, 2], [1, 2, 1]]
+    #mask = np.flipud(np.fliplr(mask))
+    print(mask)
+    
+    
+def maskblur():
+    mask =  1/16 * [[1, 2, 1], [2, 4, 2], [1, 2, 1]]
+    return mask
+    
+def setSquare3():
+    Square = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+    return Square
+    
+def setCross3():
+    Cross = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
+    return Cross    
 
 def histeq(img):
     histo = hist(img)
@@ -82,5 +141,25 @@ def histeq(img):
     for i in range(0, len(px) + 1):
         cdf.append(int(sum(px[:i]) * 255))
     print(cdf)
-    histeq = numpy.array([[cdf[pixel] for pixel in img[n]] for n in range(len(img))])
+    histeq = np.array([[cdf[pixel] for pixel in img[n]] for n in range(len(img))])
     return histeq
+    
+    
+    
+#    if(len(hist) == 1):
+#       showhist = plt.hist(hist, bins = bin)
+
+    imgplot = showhist
+    plt.show()
+    return None
+
+# Unit Test
+
+
+def main(args):
+    str = "11.png"
+    imreadgray(str)
+
+
+if __name__ == "__main__":
+    main(sys.argv)
