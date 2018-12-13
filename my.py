@@ -90,24 +90,64 @@ def hist(img):
 def showhist(hist, bin=1):
     
     showhist = 0
-    x = list(range(255))
+    newHist = None
+    x = list(range(bin))
     z = 0 
     _, ax = plt.subplots()
     if(len(hist[0]) == 1):
+        
         showhist = np.hstack(hist)
-        print(hist)
-        for j in range(0, 255):
-            ax.bar(x[j], showhist[j], color= "Blue")
+        newHist = showhist.copy()
+        newHist = np.zeros_like(newHist)
+        
+        for j in range(0, 256):
+
+            pix = showhist[j] * bin / 256
+            pix = round(pix).astype(np.uint8)
+            if ( pix < bin):
+                newHist[pix] += 1
+        
+            
+        for j in range(0, bin):
+            ax.bar(x[j], newHist[j], color= "Blue")
                 
     if(len(hist[0]) == 3):
         R = np.hstack(hist[...,0])
         G = np.hstack(hist[...,1])
         B = np.hstack(hist[...,2])
+        
+        newHist = R.copy()
+        newHist = np.zeros_like(newHist)
+        newHist1 = newHist.copy()
+        newHist2 = newHist.copy()
+        
+        for j in range(0, 256):
 
-        for j in range(0, 255):
-            ax.bar(x[j] - 0.2, R[j], width = 0.2, color= "Red", align = "center")
-            ax.bar(x[j], G[j], width = 0.2 ,color= "Green", align = "center")
-            ax.bar(x[j] + 0.2, B[j], width = 0.2, color= "Blue", align = "center")
+            pix = R[j] * bin / 256
+            pix1 = G[j] * bin / 256
+            pix2 = B[j] * bin / 256
+
+            pix = round(pix).astype(np.uint8)
+            pix1 = round(pix1).astype(np.uint8)
+            pix2 = round(pix2).astype(np.uint8)
+            
+            if ( pix < bin):
+                newHist[pix] += 1
+            
+            if ( pix1 < bin):
+                newHist1[pix1] += 1
+            
+            if ( pix2 < bin):
+                newHist2[pix2] += 1
+        
+            
+        
+
+        for j in range(0, bin):
+            ax.bar(x[j] - 0.2, newHist[j], width = 0.2, color= "Red", align = "center")
+            ax.bar(x[j], newHist1[j], width = 0.2 ,color= "Green", align = "center")
+            ax.bar(x[j] + 0.2, newHist2[j], width = 0.2, color= "Blue", align = "center")
+
 
    
      
