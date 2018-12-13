@@ -3,7 +3,12 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+def clamp(self, x, x_min, x_max):
+    if (x < x_min):
+        x = x_min
+    if (x > x_max):
+        x = x_max
+    return x
 def imread(str):
     img = plt.imread(str)
     if (nchannels(img) == 3 and img.dtype != np.int32):
@@ -111,13 +116,19 @@ def showhist(hist, bin=1):
     
     
 def convolve(img, mask):
-    mask = [[1, 2, 1], [2, 4, 2], [1, 2, 1]]
-    #mask = np.flipud(np.fliplr(mask))
-    print(mask)
+    new = np.flip(mask, 0)
+    mask = np.flip(new, 1)
+    new = np.zeros((img.shape[0], img.shape[1]))
+    aux = np.zeros((img.shape[0] + 2, img.shape[1] + 2), np.uint8)
+    aux[1:-1, 1:-1] = img
+    for x in range(img.shape[1]):  
+        for y in range(img.shape[0]):
+            new[y,x]=(mask*aux[y:y+3,x:x+3]).sum()        
+    return new
     
     
-def maskblur():
-    mask =  1/16 * [[1, 2, 1], [2, 4, 2], [1, 2, 1]]
+def maskBlur():
+    mask =  1/16 * np.array([[1., 2., 1.], [2., 4., 2.], [1., 2., 1.]])
     return mask
     
 def setSquare3():
@@ -144,7 +155,7 @@ def histeq(img):
     histeq = np.array([[cdf[pixel] for pixel in img[n]] for n in range(len(img))])
     return histeq
     
-    
+
     
 #    if(len(hist) == 1):
 #       showhist = plt.hist(hist, bins = bin)

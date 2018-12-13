@@ -274,5 +274,5 @@ class ImgCanvas(tk.Frame):
 if __name__ == "__main__":
 
   img = my.imreadgray("op.png")
-  new = my.histeq(img)
-  my.imshow(new)
+  new = my.convolve(img, my.maskBlur())
+  my.imshow(img)
